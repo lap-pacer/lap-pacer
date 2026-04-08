@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lap Pace Counter</title>
+
+  <style>
+    body {
+      background: black;
+      color: white;
+      font-family: "Courier New", monospace;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    #timer {
+      margin-bottom: 30px;
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      min-width: 320px;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
+    #mainTime {
+      font-size: 4rem;
+      color: orange;
+      font-family: "Courier New", monospace;
+      display: inline-block;
+      width: 6ch;
+      text-align: right;
+    }
+
+    #decimal {
+      font-size: 2rem;
+      color: orange;
+      font-family: "Courier New", monospace;
+      display: inline-block;
+      width: 3ch;
+      text-align: left;
+    }
+
+    .track-wrapper {
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 1.1rem;
+      color: white;
+    }
+
+    select {
+      font-family: "Courier New", monospace;
+      font-size: 1.1rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: none;
+      background: #222;
+      color: white;
+    }
+
+    #paceList {
+      width: 340px;
+      margin: 0 auto 25px auto;
+    }
+
+    .paceRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;        /* prevents breaking */
+}
+
+    .paceRow:nth-child(odd) {
+      color: red;
+    }
+
+    .paceRow:nth-child(even) {
+      color: cyan;
+    }
+
+   .paceLap {
+  flex: 1;
+  text-align: left;
+}
+
+.paceDist {
+  flex: 1;
+  text-align: center;
+}
+
+.paceValue {
+  flex: 1;
+  text-align: right;
+}
+
+    .paceDist {
+      width: 90px;
+      text-align: center;
+    }
+
+    .paceValue {
+      width: 120px;
+      text-align: right;
+    }
+
+    button {
+      font-size: 1.2rem;
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: "Courier New", monospace;
+      color: white;
+    }
+
+    #start { background: green; }
+    #stop { background: red; }
+    #reset { background: gray; }
+
+    @media (max-width: 500px) {
+  .paceRow {
+    font-size: 1.3rem;
+  }
+
+  .paceLap {
+    width: 60px;
+  }
+
+  .paceDist {
+    width: 70px;
+  }
+
+  .paceValue {
+    width: 90px;
+  }
+}
+  </style>
+</head>
+
+<body>
+
+  <div id="timer">
+    <span id="mainTime">00:00</span><span id="decimal">.00</span>
+  </div>
+
+  <div class="track-wrapper">
+    <label for="trackSelect">Track: </label>
+    <select id="trackSelect">
+      <option value="200">200 m</option>
+      <option value="400">400 m</option>
+    </select>
+  </div>
+
+  <div id="paceList"></div>
+
+  <button id="start">Start</button>
+  <button id="stop">Stop</button>
+  <button id="reset">Reset</button>
+
+  <script>
+    let running = false;
+    let startTime = 0;
+    let elapsed = 0;
+    let animationId = null;
+let lastPaceUpdateSecond = -1;
+
+    const mainTimeEl = document.getElementById("mainTime");
+    const decimalEl = document.getElementById("decimal");
+    const trackSelect = document.getElementById("trackSelect");
+    const paceList = document.getElementById("paceList");
+
+    function formatTime(sec) {
+      const minutes = Math.floor(sec / 60);
+      const seconds = Math.floor(sec % 60);
+      const hundredths = Math.floor((sec % 1) * 100);
+
+      return (
+        String(minutes).padStart(2, "0") + ":" +
+        String(seconds).padStart(2, "0") + "." +
+        String(hundredths).padStart(2, "0")
+      );
+    }
+
+    function formatPace(sec) {
+  if (!isFinite(sec) || sec <= 0) {
+    return "--:--";
+  }
+
+  const minutes = Math.floor(sec / 60);
+  const seconds = Math.floor(sec % 60);
+
+  return (
+    String(minutes).padStart(2, "0") + ":" +
+    String(seconds).padStart(2, "0")
+  );
+}
+
+    function getTrackDistance() {
+      return Number(trackSelect.value);
+    }
+
+    function renderPaces() {
+      const trackDistance = getTrackDistance();
+      paceList.innerHTML = "";
+
+      for (let lap = 1; lap <= 10; lap++) {
+        const totalDistance = lap * trackDistance;
+        let paceText = "--:--";
+
+        if (elapsed > 0) {
+          const distanceKm = totalDistance / 1000;
+          const paceSeconds = elapsed / distanceKm;
+          paceText = formatPace(paceSeconds);
+        }
+
+        const row = document.createElement("div");
+        row.className = "paceRow";
+
+        row.innerHTML = `
+          <div class="paceLap">Lap ${lap}</div>
+          <div class="paceDist">${totalDistance}m</div>
+          <div class="paceValue">${paceText}</div>
+        `;
+
+        paceList.appendChild(row);
+      }
+    }
+
+    function runTimer() {
+      if (!running) return;
+
+      elapsed = (Date.now() - startTime) / 1000;
+
+      const [main, dec] = formatTime(elapsed).split(".");
+      mainTimeEl.textContent = main;
+      decimalEl.textContent = "." + dec;
+
+      const currentSecond = Math.floor(elapsed);
+
+if (currentSecond !== lastPaceUpdateSecond) {
+  lastPaceUpdateSecond = currentSecond;
+  renderPaces();
+}
+
+      animationId = requestAnimationFrame(runTimer);
+    }
+
+    document.getElementById("start").onclick = () => {
+      if (running) return;
+
+      running = true;
+      startTime = Date.now() - elapsed * 1000;
+      runTimer();
+    };
+
+    document.getElementById("stop").onclick = () => {
+      running = false;
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+
+    document.getElementById("reset").onclick = () => {
+      if (animationId) cancelAnimationFrame(animationId);
+
+      elapsed = 0;
+      startTime = Date.now();
+      running = true;
+
+      mainTimeEl.textContent = "00:00";
+      decimalEl.textContent = ".00";
+
+      renderPaces();
+      runTimer();
+    };
+
+    trackSelect.onchange = () => {
+      renderPaces();
+    };
+
+    renderPaces();
+  </script>
+
+</body>
+</html>
