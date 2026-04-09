@@ -100,7 +100,7 @@
     /* Middle column (Distance) */
     .paceDist {
       flex: 1;
-      text-align: center;
+      text-align: right;
     }
 
     /* Right column (Pace) — most important, bigger font */
@@ -113,7 +113,7 @@
     /* (Duplicate styles kept — no functional issue) */
     .paceDist {
       width: 90px;
-      text-align: center;
+      text-align: right;
     }
 
     .paceValue {
@@ -262,8 +262,8 @@
 
         row.innerHTML = `
           <div class="paceLap">Lap ${lap}</div>
-          <div class="paceDist">${totalDistance}m</div>
           <div class="paceValue">${paceText}</div>
+          <div class="paceDist">${totalDistance}m</div>
         `;
 
         paceList.appendChild(row);
