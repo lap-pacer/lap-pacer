@@ -6,6 +6,7 @@
   <title>Lap Pace Counter - Laptop</title>
 
   <style>
+    /* ===== GLOBAL STYLING ===== */
     body {
       background: black;
       color: white;
@@ -14,35 +15,46 @@
       margin: 10px;
     }
 
-    #timer {
-      margin-bottom: 25px;
-      display: inline-flex;
-      align-items: baseline;
-      justify-content: center;
-      min-width: 420px;
-      font-variant-numeric: tabular-nums;
-      font-feature-settings: "tnum";
+    /* ===== TOP BAR (buttons + timer + selector) ===== */
+    .top-bar {
+      position: relative;
+      width: 100%;
+      height: 80px;
     }
 
+    /* ===== TIMER (centered) ===== */
+    #timer {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, 0);
+      display: inline-flex;
+      align-items: baseline;
+    }
+
+    /* Main time (MM:SS) */
     #mainTime {
       font-size: 6rem;
       color: orange;
-      display: inline-block;
       width: 6ch;
       text-align: right;
+      font-weight: bold;
     }
 
+    /* Decimal (.xx) */
     #decimal {
       font-size: 3rem;
       color: orange;
-      display: inline-block;
       width: 3ch;
       text-align: left;
+      font-weight: bold;
     }
 
+    /* ===== TRACK SELECTOR (right side) ===== */
     .track-wrapper {
-      margin-bottom: 20px;
-      font-size: 1.5rem;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
     }
 
     label {
@@ -59,56 +71,14 @@
       color: white;
     }
 
-    #paceGrid {
-      width: 95vw;
-      max-width: 1400px;
-      margin: 0 auto 30px auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-    }
-
-    .paceColumn {
-      background: #050505;
-      padding: 10px 20px;
-      border-radius: 10px;
-    }
-
-    .paceRow {
+    /* ===== BUTTONS (left side) ===== */
+    .controls {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      white-space: nowrap;
-      overflow: hidden;
-      margin: 8px 0;
-      padding: 10px 0;
-    }
-
-    .paceRow:nth-child(odd) {
-      color: red;
-    }
-
-    .paceRow:nth-child(even) {
-      color: cyan;
-    }
-
-    .paceLap {
-      flex: 1;
-      text-align: left;
-      font-size: 2rem;
-    }
-
-    .paceDist {
-      flex: 1;
-      text-align: center;
-      font-size: 2rem;
-    }
-
-    .paceValue {
-      flex: 1;
-      text-align: right;
-      font-size: 3rem;
-      font-weight: bold;
+      gap: 6px;
     }
 
     button {
@@ -126,6 +96,60 @@
     #stop { background: red; }
     #reset { background: gray; }
 
+    /* ===== GRID (2 columns: laps 1–5 and 6–10) ===== */
+    #paceGrid {
+      width: 95vw;
+      max-width: 1400px;
+      margin: 0 auto 30px auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    .paceColumn {
+      background: #050505;
+      padding: 1px 2px;
+      border-radius: 10px;
+    }
+
+    /* ===== EACH LAP ROW ===== */
+    .paceRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      margin: 1px 0;
+      padding: 2px 0;
+      line-height: 0.8;
+    }
+
+    /* Alternate colors for readability */
+    .paceRow:nth-child(odd) {
+      color: red;
+    }
+
+    .paceRow:nth-child(even) {
+      color: cyan;
+    }
+
+    /* Lap label (L1, L2, etc.) */
+    .paceLap {
+      flex: 0 0 auto;
+      text-align: center;
+      margin-right: 3px;
+      font-size: 3rem;
+    }
+
+    /* Pace value (MAIN FOCUS → very large) */
+    .paceValue {
+      flex: 1;
+      text-align: center;
+      font-size: 9rem;
+      font-weight: bold;
+    }
+
+    /* ===== MOBILE FALLBACK ===== */
     @media (max-width: 900px) {
       #paceGrid {
         grid-template-columns: 1fr;
@@ -139,8 +163,7 @@
         font-size: 2.2rem;
       }
 
-      .paceLap,
-      .paceDist {
+      .paceLap {
         font-size: 1.5rem;
       }
 
@@ -153,40 +176,55 @@
 
 <body>
 
-  <div id="timer">
-    <span id="mainTime">00:00</span><span id="decimal">.00</span>
+  <!-- ===== TOP BAR ===== -->
+  <div class="top-bar">
+
+    <!-- LEFT: Controls -->
+    <div class="controls">
+      <button id="start">Start</button>
+      <button id="stop">Stop</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <!-- CENTER: Timer -->
+    <div id="timer">
+      <span id="mainTime">00:00</span>
+      <span id="decimal">.00</span>
+    </div>
+
+    <!-- RIGHT: Track selector -->
+    <div class="track-wrapper">
+      <label for="trackSelect">Track:</label>
+      <select id="trackSelect">
+        <option value="200">200 m</option>
+        <option value="400">400 m</option>
+      </select>
+    </div>
+
   </div>
 
-  <div class="track-wrapper">
-    <label for="trackSelect">Track: </label>
-    <select id="trackSelect">
-      <option value="200">200 m</option>
-      <option value="400">400 m</option>
-    </select>
-  </div>
-
+  <!-- ===== LAP GRID ===== -->
   <div id="paceGrid">
     <div id="leftColumn" class="paceColumn"></div>
     <div id="rightColumn" class="paceColumn"></div>
   </div>
 
-  <button id="start">Start</button>
-  <button id="stop">Stop</button>
-  <button id="reset">Reset</button>
-
   <script>
-    let running = false;
-    let startTime = 0;
-    let elapsed = 0;
-    let animationId = null;
-    let lastPaceUpdateSecond = -1;
+    /* ===== STATE VARIABLES ===== */
+    let running = false;              // Is timer running?
+    let startTime = 0;               // Timestamp when started
+    let elapsed = 0;                 // Elapsed time (seconds)
+    let animationId = null;          // requestAnimationFrame ID
+    let lastPaceUpdateSecond = -1;   // Used to limit updates to 1/sec
 
+    /* ===== DOM REFERENCES ===== */
     const mainTimeEl = document.getElementById("mainTime");
     const decimalEl = document.getElementById("decimal");
     const trackSelect = document.getElementById("trackSelect");
     const leftColumn = document.getElementById("leftColumn");
     const rightColumn = document.getElementById("rightColumn");
 
+    /* ===== FORMAT TIME (MM:SS.xx) ===== */
     function formatTime(sec) {
       const minutes = Math.floor(sec / 60);
       const seconds = Math.floor(sec % 60);
@@ -199,10 +237,9 @@
       );
     }
 
+    /* ===== FORMAT PACE (MM:SS) ===== */
     function formatPace(sec) {
-      if (!isFinite(sec) || sec <= 0) {
-        return "--:--";
-      }
+      if (!isFinite(sec) || sec <= 0) return "--:--";
 
       const minutes = Math.floor(sec / 60);
       const seconds = Math.floor(sec % 60);
@@ -213,14 +250,17 @@
       );
     }
 
+    /* ===== GET TRACK DISTANCE ===== */
     function getTrackDistance() {
       return Number(trackSelect.value);
     }
 
+    /* ===== CREATE ONE LAP ROW ===== */
     function createPaceRow(lap, trackDistance) {
       const totalDistance = lap * trackDistance;
       let paceText = "--:--";
 
+      // Compute pace if timer is running
       if (elapsed > 0) {
         const distanceKm = totalDistance / 1000;
         const paceSeconds = elapsed / distanceKm;
@@ -231,39 +271,45 @@
       row.className = "paceRow";
 
       row.innerHTML = `
-        <div class="paceLap">Lap ${lap}</div>
-        <div class="paceDist">${totalDistance}m</div>
+        <div class="paceLap">L${lap}</div>
         <div class="paceValue">${paceText}</div>
       `;
 
       return row;
     }
 
+    /* ===== RENDER ALL LAPS ===== */
     function renderPaces() {
       const trackDistance = getTrackDistance();
+
       leftColumn.innerHTML = "";
       rightColumn.innerHTML = "";
 
+      // Left column (laps 1–5)
       for (let lap = 1; lap <= 5; lap++) {
         leftColumn.appendChild(createPaceRow(lap, trackDistance));
       }
 
+      // Right column (laps 6–10)
       for (let lap = 6; lap <= 10; lap++) {
         rightColumn.appendChild(createPaceRow(lap, trackDistance));
       }
     }
 
+    /* ===== MAIN TIMER LOOP ===== */
     function runTimer() {
       if (!running) return;
 
+      // Update elapsed time
       elapsed = (Date.now() - startTime) / 1000;
 
+      // Update display
       const [main, dec] = formatTime(elapsed).split(".");
       mainTimeEl.textContent = main;
       decimalEl.textContent = "." + dec;
 
+      // Update pace once per second (avoid flicker)
       const currentSecond = Math.floor(elapsed);
-
       if (currentSecond !== lastPaceUpdateSecond) {
         lastPaceUpdateSecond = currentSecond;
         renderPaces();
@@ -272,19 +318,24 @@
       animationId = requestAnimationFrame(runTimer);
     }
 
+    /* ===== BUTTONS ===== */
+
+    // Start
     document.getElementById("start").onclick = () => {
       if (running) return;
 
       running = true;
-      startTime = Date.now() - elapsed * 1000;
+      startTime = Date.now() - elapsed * 1000; // resume support
       runTimer();
     };
 
+    // Stop
     document.getElementById("stop").onclick = () => {
       running = false;
       if (animationId) cancelAnimationFrame(animationId);
     };
 
+    // Reset (and auto restart)
     document.getElementById("reset").onclick = () => {
       if (animationId) cancelAnimationFrame(animationId);
 
@@ -300,10 +351,14 @@
       runTimer();
     };
 
+    /* ===== EVENTS ===== */
+
+    // Update when track changes
     trackSelect.onchange = () => {
       renderPaces();
     };
 
+    /* ===== INITIAL LOAD ===== */
     renderPaces();
   </script>
 
