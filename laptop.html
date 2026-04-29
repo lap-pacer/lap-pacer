@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lap Pace Counter</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --panel: #080808;
+      --panel-border: #191919;
+      --text: #f5f5f5;
+      --muted: #a1a1a1;
+      --timer: #ff9f1c;
+      --green: #1f9d45;
+      --red: #cf2d2d;
+      --gray: #5a5a5a;
+      --cyan: #53f8ff;
+      --amber: #ffb347;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top, rgba(255, 159, 28, 0.12), transparent 24%),
+        linear-gradient(180deg, #050505 0%, #000 100%);
+      color: var(--text);
+      font-family: "Courier New", monospace;
+    }
+
+    .page {
+      width: min(96vw, 1480px);
+      margin: 0 auto;
+      height: 100vh;
+      padding: 12px 18px 14px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-bar {
+      position: relative;
+      min-height: 104px;
+      margin-bottom: 10px;
+      flex: 0 0 auto;
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(14, 14, 14, 0.95), rgba(3, 3, 3, 0.95));
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    .controls,
+    .track-wrapper {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls {
+      left: 18px;
+    }
+
+    .track-wrapper {
+      right: 18px;
+    }
+
+    .top-label {
+      font-size: 1.15rem;
+      color: var(--muted);
+    }
+
+    button,
+    select {
+      font-family: inherit;
+      border-radius: 10px;
+      border: none;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1.45rem;
+      color: #fff;
+      cursor: pointer;
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.08);
+    }
+
+    .start-btn {
+      background: var(--green);
+    }
+
+    .stop-btn {
+      background: var(--red);
+    }
+
+    .reset-btn {
+      background: var(--gray);
+    }
+
+    #timer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0;
+    }
+
+    #mainTime {
+      width: 6ch;
+      text-align: right;
+      font-size: clamp(5rem, 7vw, 7rem);
+      line-height: 1;
+      font-weight: 700;
+      color: var(--timer);
+      letter-spacing: -0.05em;
+    }
+
+    #decimal {
+      width: 3ch;
+      text-align: left;
+      font-size: clamp(2.5rem, 3vw, 3.2rem);
+      line-height: 1;
+      font-weight: 700;
+      color: var(--timer);
+    }
+
+    select {
+      padding: 10px 14px;
+      font-size: 1.3rem;
+      background: #222;
+      color: #fff;
+      min-width: 140px;
+    }
+
+    .pace-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .pace-column {
+      background: linear-gradient(180deg, rgba(9, 9, 9, 0.95), rgba(2, 2, 2, 0.98));
+      border: 1px solid var(--panel-border);
+      border-radius: 18px;
+      padding: 8px 14px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-evenly;
+      min-height: 0;
+    }
+
+    .pace-row {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr) 132px;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      min-height: 0;
+    }
+
+    .pace-row:last-child {
+      border-bottom: none;
+    }
+
+    .pace-row:nth-child(odd) .pace-lap,
+    .pace-row:nth-child(odd) .pace-value {
+      color: #fcff4d;
+    }
+
+    .pace-row:nth-child(even) .pace-lap,
+    .pace-row:nth-child(even) .pace-value {
+      color: var(--cyan);
+    }
+
+    .pace-lap {
+      font-size: 2.9rem;
+      text-align: center;
+      line-height: 0.9;
+    }
+
+    .pace-value {
+      font-size: clamp(5.25rem, 8.4vw, 9.5rem);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: -0.05em;
+      line-height: 0.9;
+    }
+
+    .pace-distance {
+      color: var(--amber);
+      text-align: right;
+      font-size: 1.15rem;
+    }
+
+    @media (max-width: 1180px) {
+      .top-bar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 18px;
+      }
+
+      .controls,
+      .track-wrapper,
+      #timer {
+        position: static;
+        transform: none;
+        justify-self: center;
+      }
+
+      .controls,
+      .track-wrapper {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      #timer {
+        order: -1;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .pace-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pace-row {
+        grid-template-columns: 72px minmax(0, 1fr) 100px;
+      }
+
+      .pace-lap {
+        font-size: 2rem;
+      }
+
+      .pace-value {
+        font-size: clamp(3.4rem, 11vw, 5.6rem);
+      }
+
+      .pace-distance {
+        font-size: 1rem;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .page {
+        width: min(100vw, 1480px);
+        height: auto;
+        min-height: 100vh;
+        overflow: auto;
+        padding: 12px;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .controls {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .track-wrapper {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="top-bar">
+      <div class="controls">
+        <button class="start-btn" id="startBtn" type="button">Start</button>
+        <button class="stop-btn" id="stopBtn" type="button">Stop</button>
+        <button class="reset-btn" id="resetBtn" type="button">Reset</button>
+      </div>
+
+      <div id="timer" aria-label="Elapsed time">
+        <span id="mainTime">00:00</span>
+        <span id="decimal">.00</span>
+      </div>
+
+      <div class="track-wrapper">
+        <label class="top-label" for="trackSelect">Track:</label>
+        <select id="trackSelect">
+          <option value="200">200 m</option>
+          <option value="400" selected>400 m</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="pace-grid" aria-label="Lap pace grid">
+      <div class="pace-column" id="leftColumn"></div>
+      <div class="pace-column" id="rightColumn"></div>
+    </section>
+  </main>
+
+  <script>
+    const totalLaps = 10;
+    const mainTimeEl = document.getElementById("mainTime");
+    const decimalEl = document.getElementById("decimal");
+    const trackSelect = document.getElementById("trackSelect");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const leftColumn = document.getElementById("leftColumn");
+    const rightColumn = document.getElementById("rightColumn");
+
+    let running = false;
+    let startTime = 0;
+    let elapsedMs = 0;
+    let animationId = null;
+    let lastRenderedSecond = -1;
+
+    function formatElapsed(ms) {
+      const totalCentiseconds = Math.floor(ms / 10);
+      const centiseconds = totalCentiseconds % 100;
+      const totalSeconds = Math.floor(totalCentiseconds / 100);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+
+      return {
+        main: `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`,
+        decimal: `.${String(centiseconds).padStart(2, "0")}`
+      };
+    }
+
+    function formatPace(msPerKm) {
+      if (!Number.isFinite(msPerKm) || msPerKm <= 0) {
+        return "--:--";
+      }
+
+      const totalSeconds = Math.round(msPerKm / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function getTrackMeters() {
+      return Number(trackSelect.value);
+    }
+
+    function getDistanceMeters(lap) {
+      return lap * getTrackMeters();
+    }
+
+    function updateTimerDisplay() {
+      const { main, decimal } = formatElapsed(elapsedMs);
+      mainTimeEl.textContent = main;
+      decimalEl.textContent = decimal;
+    }
+
+    function createPaceRow(lap) {
+      const distanceMeters = getDistanceMeters(lap);
+      const distanceKm = distanceMeters / 1000;
+      const pace = elapsedMs > 0 ? formatPace(elapsedMs / distanceKm) : "--:--";
+
+      const row = document.createElement("div");
+      row.className = "pace-row";
+      row.innerHTML = `
+        <div class="pace-lap">L${lap}</div>
+        <div class="pace-value">${pace}</div>
+        <div class="pace-distance">${distanceMeters} m</div>
+      `;
+      return row;
+    }
+
+    function renderPaces() {
+      leftColumn.innerHTML = "";
+      rightColumn.innerHTML = "";
+
+      for (let lap = 1; lap <= 5; lap += 1) {
+        leftColumn.appendChild(createPaceRow(lap));
+      }
+
+      for (let lap = 6; lap <= totalLaps; lap += 1) {
+        rightColumn.appendChild(createPaceRow(lap));
+      }
+    }
+
+    function paint(forcePaces = false) {
+      updateTimerDisplay();
+
+      const currentSecond = Math.floor(elapsedMs / 1000);
+      if (forcePaces || currentSecond !== lastRenderedSecond) {
+        lastRenderedSecond = currentSecond;
+        renderPaces();
+      }
+    }
+
+    function runTimer(now) {
+      if (!running) {
+        return;
+      }
+
+      elapsedMs = now - startTime;
+      paint();
+      animationId = requestAnimationFrame(runTimer);
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (running) {
+        return;
+      }
+
+      running = true;
+      startTime = performance.now() - elapsedMs;
+      animationId = requestAnimationFrame(runTimer);
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (!running) {
+        return;
+      }
+
+      running = false;
+      cancelAnimationFrame(animationId);
+    });
+
+    resetBtn.addEventListener("click", () => {
+      cancelAnimationFrame(animationId);
+      elapsedMs = 0;
+      startTime = performance.now();
+      lastRenderedSecond = -1;
+      paint(true);
+      running = true;
+      animationId = requestAnimationFrame(runTimer);
+    });
+
+    trackSelect.addEventListener("change", () => {
+      paint(true);
+    });
+
+    paint(true);
+  </script>
+</body>
+</html>
